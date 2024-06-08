@@ -58,6 +58,7 @@ int up_frame_counter;
 int down_frame_counter;
 char a_pressed;
 char b_pressed;
+bool won;
 
 // setup PPU and tables
 void setup_graphics() {
@@ -114,6 +115,7 @@ void init(){
   down_frame_counter = 0;
   a_pressed = 0;
   b_pressed = 0;
+  won = false;
 }
 
 void display_title(){
@@ -142,7 +144,8 @@ void start_game() {
         // Read controller input
         char pad = pad_poll(0);
         
-        if(pad & PAD_UP) {
+      	if(!won) {
+          if(pad & PAD_UP) {
           if(up_frame_counter == 0 || up_frame_counter > 60){
             guess++;
             if(guess > 10) guess = 1; // Wrap around
@@ -150,33 +153,35 @@ void start_game() {
             if (up_frame_counter == 0) up_frame_counter = 1;
           }
           up_frame_counter++;
-        } else {
-          up_frame_counter = 0;
-        }
-        
-        if(pad & PAD_DOWN) {
-          if(down_frame_counter == 0 || down_frame_counter > 60){
-            guess--;
-            if(guess < 1) guess = 10; // Wrap around
-            display_guess_screen();
-            if (down_frame_counter == 0) down_frame_counter = 1;
+          } else {
+            up_frame_counter = 0;
           }
-          down_frame_counter++;
-        } else {
-          down_frame_counter = 0;
-        }
-        
-        if(pad & PAD_A) {
-            if (!a_pressed) {
-                check_guess();
-                display_guess_screen();
-                a_pressed = 1; // Mark A as pressed
+
+          if(pad & PAD_DOWN) {
+            if(down_frame_counter == 0 || down_frame_counter > 60){
+              guess--;
+              if(guess < 1) guess = 10; // Wrap around
+              display_guess_screen();
+              if (down_frame_counter == 0) down_frame_counter = 1;
             }
-        } else {
-            a_pressed = 0; // Reset A button state if released
+            down_frame_counter++;
+          } else {
+            down_frame_counter = 0;
+          }
+
+          if(pad & PAD_A) {
+              if (!a_pressed) {
+                  check_guess();
+                  display_guess_screen();
+                  a_pressed = 1; // Mark A as pressed
+              }
+          } else {
+              a_pressed = 0; // Reset A button state if released
+          }
         }
         
-        if(pad & PAD_B) {
+      	else {
+          if(pad & PAD_B) {
             if (!b_pressed) {
                 // Reset the game
                 init();
@@ -188,9 +193,11 @@ void start_game() {
                 display_guess_screen();
                 b_pressed = 1; // Mark B as pressed
             }
-        } else {
-            b_pressed = 0; // Reset B button state if released
+          } else {
+              b_pressed = 0; // Reset B button state if released
+          }
         }
+      
       ppu_wait_frame();
     }
 }
@@ -211,6 +218,7 @@ void check_guess() {
     guesses++;
     
     if(guess == correct_num) {
+      	won = true;
         display_result(1);
     } else {
         display_result(0);
